@@ -1,0 +1,264 @@
+/* Block Styles */
+.block {
+    position: relative;
+    margin: 4px 0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.block:hover {
+    background-color: var(--block-hover, rgba(255, 255, 255, 0.05));
+}
+
+.block-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    line-height: 1.6;
+    padding: 0;
+}
+
+.block-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+/* Paragraph */
+.paragraph-block textarea {
+    font-size: 1rem;
+}
+
+/* Headings */
+.heading1-input {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 1rem 0;
+}
+
+.heading2-input {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0.75rem 0;
+}
+
+.heading3-input {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0.5rem 0;
+}
+
+.heading4-input {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0.5rem 0;
+}
+
+/* Code Block */
+.code-block {
+    margin: 1rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--code-bg, #1e1e1e);
+}
+
+.code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-block-header select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.copy-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.copy-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Math Block */
+.math-block {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.math-block:hover {
+    border-color: var(--accent-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.math-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.math-editor textarea {
+    width: 100%;
+    min-height: 80px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    padding: 0.75rem;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+.math-preview {
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+/* Callout Block */
+.callout-block {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.callout-block.blue {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+.callout-block.yellow {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: #fbbf24;
+}
+
+.callout-block.red {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+.callout-block.green {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: #22c55e;
+}
+
+.callout-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.callout-content {
+    flex: 1;
+}
+
+/* Divider */
+.divider-block {
+    margin: 1.5rem 0;
+    height: 1px;
+    background: var(--glass-border);
+}
+
+/* Drag Handle */
+.drag-handle {
+    position: absolute;
+    left: -24px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    cursor: grab;
+    color: var(--text-secondary);
+    transition: opacity 0.15s;
+}
+
+.block:hover .drag-handle {
+    opacity: 1;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Block Actions */
+.block-actions {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    opacity: 0;
+    display: flex;
+    gap: 4px;
+    transition: opacity 0.15s;
+    z-index: 10;
+}
+
+.block-wrapper:hover .block-actions {
+    opacity: 1;
+}
+
+.block-action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.block-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+.delete-btn {
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 2px 8px;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Dragging State */
+.block.dragging {
+    opacity: 0.5;
+}
+
+.block.drag-over {
+    border-top: 2px solid var(--accent-primary);
+}

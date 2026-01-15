@@ -1,31 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import ReactFlow, {
-    addEdge,
-    Background,
-    Controls,
-    useNodesState,
-    useEdgesState
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import {
-    Save,
-    ArrowLeft,
-    Bold,
-    Italic,
-    List,
-    Heading1,
-    Heading2,
-    Eye,
-    EyeOff,
-    Plus,
-    AlertCircle
-} from 'lucide-react';
+import BlockEditor from '../../editor/BlockEditor';
+import { Save, ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const ArticleEditor = () => {
     const { id } = useParams();
@@ -39,34 +18,20 @@ const ArticleEditor = () => {
     const [published, setPublished] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const [showMindmap, setShowMindmap] = useState(false);
-
-    // Mindmap state
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
-    const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
-
-    // Tiptap editor
-    const editor = useEditor({
-        extensions: [StarterKit],
-        content: '<p>Start writing your article...</p>',
-        editorProps: {
-            attributes: {
-                style: 'outline: none; min-height: 300px; color: var(--text-primary); font-family: var(--font-main); line-height: 1.8; font-size: 1.05rem;',
-            },
-        },
-    });
+    const [articleData, setArticleData] = useState(null);
 
     useEffect(() => {
         if (!isNew && id) {
             fetchArticle();
+        } else if (isNew) {
+            // Create a new article in database first
+            createNewArticle();
         }
     }, [id, isNew]);
 
     useEffect(() => {
         // Auto-generate slug from title
-        if (isNew) {
+        if (isNew && title) {
             const generatedSlug = title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
@@ -74,6 +39,30 @@ const ArticleEditor = () => {
             setSlug(generatedSlug);
         }
     }, [title, isNew]);
+
+    const createNewArticle = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('articles')
+                .insert([{
+                    title: 'Untitled Article',
+                    slug: `untitled-${Date.now()}`,
+                    excerpt: '',
+                    published: false,
+                    author_id: user.id,
+                }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            setArticleData(data);
+            navigate(`/admin/articles/${data.id}`, { replace: true });
+        } catch (error) {
+            console.error('Error creating article:', error);
+            setError(`Failed to create article: ${error.message}`);
+        }
+    };
 
     const fetchArticle = async () => {
         try {
@@ -85,29 +74,18 @@ const ArticleEditor = () => {
 
             if (error) throw error;
 
+            setArticleData(data);
             setTitle(data.title);
             setSlug(data.slug);
             setExcerpt(data.excerpt || '');
-            setPublished(data.published);
-
-            if (editor && data.content) {
-                editor.commands.setContent(data.content);
-            }
-
-            if (data.mindmap_data) {
-                setNodes(data.mindmap_data.nodes || []);
-                setEdges(data.mindmap_data.edges || []);
-                if (data.mindmap_data.nodes && data.mindmap_data.nodes.length > 0) {
-                    setShowMindmap(true);
-                }
-            }
+            setPublished(data.published || false);
         } catch (error) {
             console.error('Error fetching article:', error);
             setError('Failed to load article');
         }
     };
 
-    const handleSave = async () => {
+    const handleSaveMetadata = async () => {
         if (!title.trim() || !slug.trim()) {
             setError('Title and slug are required');
             return;
@@ -117,52 +95,45 @@ const ArticleEditor = () => {
         setError('');
 
         try {
-            const articleData = {
-                title,
-                slug,
-                excerpt,
-                content: editor?.getJSON() || {},
-                mindmap_data: showMindmap ? { nodes, edges } : null,
-                published,
-                author_id: user.id,
-            };
+            const { error } = await supabase
+                .from('articles')
+                .update({
+                    title,
+                    slug,
+                    excerpt,
+                    published,
+                })
+                .eq('id', articleData.id);
 
-            if (isNew) {
-                const { data, error } = await supabase
-                    .from('articles')
-                    .insert([articleData])
-                    .select()
-                    .single();
+            if (error) throw error;
 
-                if (error) throw error;
-                navigate(`/admin/articles/edit/${data.id}`);
-            } else {
-                const { error } = await supabase
-                    .from('articles')
-                    .update(articleData)
-                    .eq('id', id);
-
-                if (error) throw error;
-            }
-
-            alert('Article saved successfully!');
+            alert('Article metadata saved successfully!');
         } catch (error) {
-            console.error('Error saving article:', error);
-            setError(error.message || 'Failed to save article');
+            console.error('Error saving metadata:', error);
+            setError(error.message || 'Failed to save metadata');
         } finally {
             setSaving(false);
         }
     };
 
-    const addMindmapNode = () => {
-        const newNode = {
-            id: `node-${Date.now()}`,
-            position: { x: Math.random() * 400, y: Math.random() * 300 },
-            data: { label: 'New Node' },
-            style: { background: 'var(--accent-primary)', color: '#fff', borderRadius: '8px', padding: '10px' }
-        };
-        setNodes((nds) => [...nds, newNode]);
-    };
+    if (!articleData && !isNew) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                        width: '50px',
+                        height: '50px',
+                        border: '3px solid var(--glass-border)',
+                        borderTop: '3px solid var(--accent-primary)',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        margin: '0 auto 1rem'
+                    }}></div>
+                    <p style={{ color: 'var(--text-secondary)' }}>Loading article...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ minHeight: '100vh', padding: '2rem' }}>
@@ -191,7 +162,7 @@ const ArticleEditor = () => {
                             {published ? 'Published' : 'Draft'}
                         </button>
                         <button
-                            onClick={handleSave}
+                            onClick={handleSaveMetadata}
                             disabled={saving}
                             style={{
                                 padding: '0.75rem 2rem',
@@ -208,7 +179,7 @@ const ArticleEditor = () => {
                             }}
                         >
                             <Save size={18} />
-                            {saving ? 'Saving...' : 'Save Article'}
+                            {saving ? 'Saving...' : 'Save Metadata'}
                         </button>
                     </div>
                 </div>
@@ -292,141 +263,13 @@ const ArticleEditor = () => {
                     </div>
                 </div>
 
-                {/* Editor */}
-                <div className="glass" style={{ padding: '2rem', marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Content</h3>
-
-                    {/* Editor Toolbar */}
-                    {editor && (
-                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', padding: '0.75rem', borderBottom: '1px solid var(--glass-border)' }}>
-                            <button
-                                onClick={() => editor.chain().focus().toggleBold().run()}
-                                style={{
-                                    background: editor.isActive('bold') ? 'var(--accent-primary)' : 'transparent',
-                                    border: '1px solid var(--glass-border)',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                <Bold size={18} />
-                            </button>
-                            <button
-                                onClick={() => editor.chain().focus().toggleItalic().run()}
-                                style={{
-                                    background: editor.isActive('italic') ? 'var(--accent-primary)' : 'transparent',
-                                    border: '1px solid var(--glass-border)',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                <Italic size={18} />
-                            </button>
-                            <button
-                                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                                style={{
-                                    background: editor.isActive('heading', { level: 1 }) ? 'var(--accent-primary)' : 'transparent',
-                                    border: '1px solid var(--glass-border)',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                <Heading1 size={18} />
-                            </button>
-                            <button
-                                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                                style={{
-                                    background: editor.isActive('heading', { level: 2 }) ? 'var(--accent-primary)' : 'transparent',
-                                    border: '1px solid var(--glass-border)',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                <Heading2 size={18} />
-                            </button>
-                            <button
-                                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                                style={{
-                                    background: editor.isActive('bulletList') ? 'var(--accent-primary)' : 'transparent',
-                                    border: '1px solid var(--glass-border)',
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                <List size={18} />
-                            </button>
-                        </div>
-                    )}
-
-                    <EditorContent editor={editor} style={{ padding: '1rem' }} />
-                </div>
-
-                {/* Mindmap Section */}
-                <div className="glass" style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h3 style={{ fontSize: '1.25rem' }}>Mindmap (Optional)</h3>
-                        <button
-                            onClick={() => setShowMindmap(!showMindmap)}
-                            className="glass"
-                            style={{
-                                padding: '0.5rem 1rem',
-                                background: 'transparent',
-                                border: '1px solid var(--glass-border)',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem'
-                            }}
-                        >
-                            {showMindmap ? 'Hide Mindmap' : 'Show Mindmap'}
-                        </button>
+                {/* Block Editor */}
+                {articleData && (
+                    <div className="glass" style={{ padding: '2rem' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Content</h3>
+                        <BlockEditor articleId={articleData.id} />
                     </div>
-
-                    {showMindmap && (
-                        <>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <button
-                                    onClick={addMindmapNode}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        background: 'var(--accent-primary)',
-                                        border: 'none',
-                                        color: '#fff',
-                                        cursor: 'pointer',
-                                        borderRadius: '6px',
-                                        fontSize: '0.875rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem'
-                                    }}
-                                >
-                                    <Plus size={16} /> Add Node
-                                </button>
-                            </div>
-
-                            <div style={{ height: '500px', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
-                                <ReactFlow
-                                    nodes={nodes}
-                                    edges={edges}
-                                    onNodesChange={onNodesChange}
-                                    onEdgesChange={onEdgesChange}
-                                    onConnect={onConnect}
-                                    fitView
-                                >
-                                    <Background color="#333" gap={20} />
-                                    <Controls />
-                                </ReactFlow>
-                            </div>
-                        </>
-                    )}
-                </div>
+                )}
             </div>
         </div>
     );

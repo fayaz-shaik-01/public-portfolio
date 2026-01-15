@@ -229,7 +229,7 @@ const AdminDashboard = () => {
                                                 {article.published ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                             <Link
-                                                to={`/admin/articles/edit/${article.id}`}
+                                                to={`/admin/articles/${article.id}`}
                                                 className="glass"
                                                 style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', borderRadius: '6px' }}
                                                 title="Edit"

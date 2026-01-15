@@ -67,11 +67,27 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ### Option 1: Vercel (Recommended)
 
 1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com) and import your repository
-3. Add environment variables in Vercel dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy!
+2. **Import Your Repository to Vercel**:
+   - Go to [vercel.com](https://vercel.com) and sign up/login (use your GitHub account)
+   - Click "Add New..." → "Project"
+   - Click "Import" next to your `final-portfolio` repository
+   - Vercel will auto-detect it's a Vite project ✅
+
+3. **Configure Environment Variables**:
+   - Before clicking "Deploy", scroll down to "Environment Variables"
+   - Add your first variable:
+     - **Name**: `VITE_SUPABASE_URL`
+     - **Value**: (paste your Supabase URL from `.env`)
+   - Click "Add" to add another:
+     - **Name**: `VITE_SUPABASE_ANON_KEY`
+     - **Value**: (paste your Supabase anon key from `.env`)
+   - ⚠️ **Important**: Make sure the variable names match exactly (including `VITE_` prefix)
+
+4. **Deploy**:
+   - Click "Deploy" button
+   - Wait 1-2 minutes for build to complete
+   - You'll get a live URL like `https://your-portfolio.vercel.app` 🎉
+   - Every time you push to GitHub, Vercel will auto-deploy!
 
 ### Option 2: Netlify
 
