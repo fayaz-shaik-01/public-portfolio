@@ -114,8 +114,9 @@ function extractPageId(url) {
         const idMatch = lastPart.match(/([a-f0-9]{32}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
 
         if (idMatch) {
-            // Remove hyphens for consistency
-            return idMatch[1].replace(/-/g, '');
+            const rawId = idMatch[1].replace(/-/g, '');
+            // Format with hyphens for Notion API: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            return `${rawId.slice(0, 8)}-${rawId.slice(8, 12)}-${rawId.slice(12, 16)}-${rawId.slice(16, 20)}-${rawId.slice(20)}`;
         }
 
         return null;
