@@ -58,11 +58,26 @@ export default async function handler(req, res) {
         console.log('Fetching Notion page content:', pageId);
         const recordMap = await notionAPI.getPage(pageId);
 
-        // Fetch page metadata (title, cover, etc.)
+        // Fetch page metadata (title, cover, etc.) and blocks using official API
         let metadata = {};
         try {
             const page = await officialNotion.pages.retrieve({ page_id: pageId });
             metadata = extractMetadata(page);
+
+            // Fetch all blocks to ensure complete data
+            const blocks = await fetchAllBlocks(officialNotion, pageId);
+
+            // Merge blocks into recordMap to fix missing block errors
+            blocks.forEach(block => {
+                if (!recordMap.block[block.id]) {
+                    recordMap.block[block.id] = {
+                        role: 'reader',
+                        value: block
+                    };
+                }
+            });
+
+            console.log(`Fetched ${blocks.length} blocks from official API`);
         } catch (error) {
             console.warn('Could not fetch metadata from official API:', error.message);
             // Fallback to extracting from recordMap
@@ -220,4 +235,40 @@ function slugify(text) {
         .replace(/[^\w\s-]/g, '') // Remove special characters
         .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
         .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
+/**
+ * Recursively fetch all blocks from a Notion page
+ */
+async function fetchAllBlocks(notion, blockId) {
+    const blocks = [];
+
+    try {
+        let hasMore = true;
+        let startCursor = undefined;
+
+        while (hasMore) {
+            const response = await notion.blocks.children.list({
+                block_id: blockId,
+                start_cursor: startCursor,
+                page_size: 100
+            });
+
+            blocks.push(...response.results);
+            hasMore = response.has_more;
+            startCursor = response.next_cursor;
+        }
+
+        // Recursively fetch children for blocks that have children
+        for (const block of blocks) {
+            if (block.has_children) {
+                const children = await fetchAllBlocks(notion, block.id);
+                blocks.push(...children);
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching blocks:', error);
+    }
+
+    return blocks;
 }
