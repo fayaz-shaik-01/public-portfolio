@@ -66,6 +66,11 @@ function groupBlocks(blocks) {
 const Block = ({ block }) => {
     const { type } = block;
 
+    // Skip table and table_row blocks - they're handled by TableGroup
+    if (type === 'table' || type === 'table_row') {
+        return null;
+    }
+
     switch (type) {
         case 'paragraph':
             return <ParagraphBlock block={block} />;
@@ -99,10 +104,6 @@ const Block = ({ block }) => {
             return <FileBlock block={block} />;
         case 'equation':
             return <EquationBlock block={block} />;
-        case 'table':
-            return <TableBlock block={block} />;
-        case 'table_row':
-            return <TableRowBlock block={block} />;
         case 'bookmark':
             return <BookmarkBlock block={block} />;
         case 'embed':
