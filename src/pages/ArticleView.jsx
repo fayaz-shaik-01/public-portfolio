@@ -3,12 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { Calendar, ArrowLeft, AlertCircle } from 'lucide-react';
-import { NotionRenderer } from 'react-notion-x';
-
-// Import Notion styles
-import 'react-notion-x/src/styles.css';
-import 'prismjs/themes/prism-tomorrow.css';
-import 'katex/dist/katex.min.css';
+import NotionBlockRenderer from '../components/NotionBlockRenderer';
 
 const ArticleView = () => {
     const { slug } = useParams();
@@ -118,16 +113,9 @@ const ArticleView = () => {
                     </div>
 
                     {/* Notion Content */}
-                    {article.notion_content ? (
-                        <div className="notion-container">
-                            <NotionRenderer
-                                recordMap={article.notion_content}
-                                fullPage={false}
-                                darkMode={true}
-                                disableHeader={true}
-                                showTableOfContents={false}
-                                minTableOfContentsItems={3}
-                            />
+                    {article.notion_content?.blocks ? (
+                        <div className="notion-content-container glass" style={{ padding: '3rem', marginBottom: '3rem' }}>
+                            <NotionBlockRenderer blocks={article.notion_content.blocks} />
                         </div>
                     ) : (
                         <div className="glass" style={{ padding: '3rem', textAlign: 'center' }}>
@@ -138,18 +126,6 @@ const ArticleView = () => {
                                 This article may have been created before Notion integration was added.
                                 Try re-syncing from Notion to display the content.
                             </p>
-                            {/* Debug info */}
-                            <details style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                <summary style={{ cursor: 'pointer' }}>Debug Info</summary>
-                                <pre style={{ textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '4px', marginTop: '0.5rem', overflow: 'auto' }}>
-                                    {JSON.stringify({
-                                        hasNotionContent: !!article.notion_content,
-                                        notionPageId: article.notion_page_id,
-                                        lastSynced: article.last_synced_at,
-                                        contentKeys: article.notion_content ? Object.keys(article.notion_content) : []
-                                    }, null, 2)}
-                                </pre>
-                            </details>
                         </div>
                     )}
 
@@ -160,63 +136,6 @@ const ArticleView = () => {
                     </div>
                 </motion.div>
             </div>
-
-            {/* Custom styles for Notion content */}
-            <style>{`
-                /* Override Notion styles to match portfolio theme */
-                .notion-container {
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid var(--glass-border);
-                    border-radius: 12px;
-                    padding: 3rem;
-                    backdrop-filter: blur(10px);
-                }
-
-                .notion-page {
-                    padding: 0 !important;
-                    background: transparent !important;
-                }
-
-                .notion-text {
-                    color: var(--text-primary) !important;
-                    line-height: 1.8 !important;
-                }
-
-                .notion-h1, .notion-h2, .notion-h3 {
-                    color: var(--text-primary) !important;
-                }
-
-                .notion-code {
-                    background: rgba(0, 0, 0, 0.3) !important;
-                    border: 1px solid var(--glass-border) !important;
-                    border-radius: 8px !important;
-                }
-
-                .notion-callout {
-                    background: rgba(255, 255, 255, 0.05) !important;
-                    border: 1px solid var(--glass-border) !important;
-                    border-radius: 8px !important;
-                }
-
-                .notion-quote {
-                    border-left: 4px solid var(--accent-primary) !important;
-                    background: rgba(255, 255, 255, 0.02) !important;
-                }
-
-                .notion-link {
-                    color: var(--accent-primary) !important;
-                }
-
-                .notion-asset-wrapper {
-                    border-radius: 8px;
-                    overflow: hidden;
-                }
-
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </article>
     );
 };
