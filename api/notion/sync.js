@@ -163,10 +163,23 @@ async function fetchAllBlocks(notion, blockId) {
             startCursor = response.next_cursor;
         }
 
+        // Recursively fetch children for blocks that have children
         for (const block of blocks) {
-            if (block.has_children) {
+            if (block.has_children && block.type !== 'table') {
+                // Fetch children and attach to the block
                 const children = await fetchAllBlocks(notion, block.id);
-                blocks.push(...children);
+
+                // Attach children to the appropriate property based on block type
+                if (block.type === 'toggle') {
+                    block.toggle.children = children;
+                } else if (block.type === 'column') {
+                    block.column.children = children;
+                } else if (block.type === 'column_list') {
+                    block.column_list.children = children;
+                } else {
+                    // For other block types, add a generic children property
+                    block.children = children;
+                }
             }
         }
     } catch (error) {

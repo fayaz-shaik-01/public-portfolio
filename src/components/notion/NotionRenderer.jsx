@@ -16,14 +16,52 @@ const NotionRenderer = ({ blocks }) => {
         return <p style={{ color: 'var(--text-secondary)' }}>No content</p>;
     }
 
+    // Group blocks to handle tables and nested structures
+    const groupedBlocks = groupBlocks(blocks);
+
     return (
         <div className="notion-content">
-            {blocks.map((block, index) => (
-                <Block key={block.id || index} block={block} />
-            ))}
+            {groupedBlocks.map((item, index) => {
+                if (item.type === 'table_group') {
+                    return <TableGroup key={index} rows={item.rows} />;
+                }
+                return <Block key={item.block.id || index} block={item.block} />;
+            })}
         </div>
     );
 };
+
+// Helper function to group table rows together
+function groupBlocks(blocks) {
+    const grouped = [];
+    let i = 0;
+
+    while (i < blocks.length) {
+        const block = blocks[i];
+
+        // Group table rows
+        if (block.type === 'table') {
+            const tableRows = [];
+            i++; // Move past the table block
+
+            // Collect all consecutive table_row blocks
+            while (i < blocks.length && blocks[i].type === 'table_row') {
+                tableRows.push(blocks[i]);
+                i++;
+            }
+
+            grouped.push({
+                type: 'table_group',
+                rows: tableRows
+            });
+        } else {
+            grouped.push({ block });
+            i++;
+        }
+    }
+
+    return grouped;
+}
 
 const Block = ({ block }) => {
     const { type } = block;
@@ -424,8 +462,9 @@ const FileBlock = ({ block }) => {
 
 // ==================== TABLE ====================
 
-const TableBlock = ({ block }) => {
-    // Tables need special handling - rows are separate blocks
+const TableGroup = ({ rows }) => {
+    if (!rows || rows.length === 0) return null;
+
     return (
         <div style={{ margin: '1em 0', overflowX: 'auto' }}>
             <table style={{
@@ -434,33 +473,32 @@ const TableBlock = ({ block }) => {
                 border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
                 <tbody>
-                    {/* Table rows will be rendered separately */}
+                    {rows.map((row, index) => (
+                        <tr key={row.id || index}>
+                            {(row.table_row?.cells || []).map((cell, cellIndex) => (
+                                <td
+                                    key={cellIndex}
+                                    style={{
+                                        padding: '0.5em',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: 'rgba(255, 255, 255, 0.9)',
+                                        minWidth: '100px'
+                                    }}
+                                >
+                                    <RichText richText={cell} />
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         </div>
     );
 };
 
-const TableRowBlock = ({ block }) => {
-    const cells = block.table_row?.cells || [];
-
-    return (
-        <tr>
-            {cells.map((cell, index) => (
-                <td
-                    key={index}
-                    style={{
-                        padding: '0.5em',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        color: 'rgba(255, 255, 255, 0.9)'
-                    }}
-                >
-                    <RichText richText={cell} />
-                </td>
-            ))}
-        </tr>
-    );
-};
+// Keep these for backwards compatibility but they won't be used
+const TableBlock = ({ block }) => null;
+const TableRowBlock = ({ block }) => null;
 
 // ==================== EMBEDS ====================
 
