@@ -165,18 +165,22 @@ async function fetchAllBlocks(notion, blockId) {
 
         // Recursively fetch children for blocks that have children
         for (const block of blocks) {
-            if (block.has_children && block.type !== 'table') {
+            if (block.has_children) {
                 // Fetch children and attach to the block
                 const children = await fetchAllBlocks(notion, block.id);
 
-                // Attach children to the appropriate property based on block type
-                if (block.type === 'toggle') {
+                // For tables, add children as separate blocks (table_row blocks)
+                if (block.type === 'table') {
+                    // Add table rows after the table block
+                    blocks.push(...children);
+                }
+                // For other block types, attach children to the appropriate property
+                else if (block.type === 'toggle') {
                     block.toggle.children = children;
                 } else if (block.type === 'column') {
                     block.column.children = children;
                 } else if (block.type === 'column_list') {
                     block.column_list.children = children;
-                } else {
                     // For other block types, add a generic children property
                     block.children = children;
                 }
