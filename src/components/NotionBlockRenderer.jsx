@@ -49,10 +49,24 @@ const BlockComponent = ({ block }) => {
             return <ImageBlock block={block} />;
         case 'equation':
             return <EquationBlock block={block} />;
-        default:
-            return <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontStyle: 'italic' }}>
-                Unsupported block type: {type}
+        case 'to_do':
+            return <TodoBlock block={block} />;
+        case 'toggle':
+            return <ToggleBlock block={block} />;
+        case 'table':
+            return <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontStyle: 'italic', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                📊 Table (not yet supported)
             </div>;
+        default:
+            // Show helpful debug info for unsupported blocks
+            return <details style={{ margin: '1rem 0', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                <summary style={{ cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                    ⚠️ Unsupported block type: <code>{type}</code>
+                </summary>
+                <pre style={{ marginTop: '0.5rem', fontSize: '0.75rem', overflow: 'auto', color: 'var(--text-secondary)' }}>
+                    {JSON.stringify(block, null, 2)}
+                </pre>
+            </details>;
     }
 };
 
@@ -179,6 +193,33 @@ const EquationBlock = ({ block }) => (
     <div style={{ margin: '1.5rem 0', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', textAlign: 'center' }}>
         <BlockMath math={block.equation.expression} />
     </div>
+);
+
+const TodoBlock = ({ block }) => (
+    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
+        <input
+            type="checkbox"
+            checked={block.to_do.checked}
+            readOnly
+            style={{ marginTop: '0.25rem', cursor: 'not-allowed' }}
+        />
+        <div style={{ flex: 1, textDecoration: block.to_do.checked ? 'line-through' : 'none', opacity: block.to_do.checked ? 0.6 : 1 }}>
+            <RichText richText={block.to_do.rich_text} />
+        </div>
+    </div>
+);
+
+const ToggleBlock = ({ block }) => (
+    <details style={{ margin: '1rem 0', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+        <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+            <RichText richText={block.toggle.rich_text} />
+        </summary>
+        <div style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
+            {block.toggle.children && block.toggle.children.length > 0 && (
+                <NotionBlockRenderer blocks={block.toggle.children} />
+            )}
+        </div>
+    </details>
 );
 
 export default NotionBlockRenderer;
