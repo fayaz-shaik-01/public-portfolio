@@ -129,9 +129,24 @@ const ArticleView = () => {
                         </div>
                     ) : (
                         <div className="glass" style={{ padding: '3rem', textAlign: 'center' }}>
-                            <p style={{ color: 'var(--text-secondary)' }}>
-                                No content available yet.
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                No Notion content available.
                             </p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                                This article may have been created before Notion integration was added.
+                                Try re-syncing from Notion to display the content.
+                            </p>
+                            {/* Debug info */}
+                            <details style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                <summary style={{ cursor: 'pointer' }}>Debug Info</summary>
+                                <pre style={{ textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '4px', marginTop: '0.5rem', overflow: 'auto' }}>
+                                    {JSON.stringify({
+                                        hasNotionContent: !!article.notion_content,
+                                        notionPageId: article.notion_page_id,
+                                        lastSynced: article.last_synced_at
+                                    }, null, 2)}
+                                </pre>
+                            </details>
                         </div>
                     )}
 

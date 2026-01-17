@@ -63,8 +63,8 @@ const NotionSyncForm = ({ onSuccess, onCancel }) => {
                         cover_image: previewData.cover_image,
                         notion_content: previewData.notion_content,
                         last_synced_at: previewData.last_synced_at,
+                        published: previewData.published || false,
                         author_id: user.id,
-                        published: false, // Default to draft
                     },
                 ])
                 .select()
@@ -191,6 +191,22 @@ const NotionSyncForm = ({ onSuccess, onCancel }) => {
                             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                                 /articles/{previewData.slug}
                             </p>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                                Status
+                            </label>
+                            <span style={{
+                                padding: '0.25rem 0.75rem',
+                                borderRadius: '100px',
+                                fontSize: '0.75rem',
+                                background: previewData.published ? 'rgba(34, 197, 94, 0.2)' : 'rgba(156, 163, 175, 0.2)',
+                                color: previewData.published ? '#86efac' : '#d1d5db',
+                                display: 'inline-block'
+                            }}>
+                                {previewData.published ? 'Published' : 'Draft'}
+                            </span>
                         </div>
 
                         {previewData.excerpt && (

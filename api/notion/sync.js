@@ -82,6 +82,7 @@ export default async function handler(req, res) {
                 excerpt: metadata.excerpt || '',
                 cover_image: metadata.cover || null,
                 tags: metadata.tags || [],
+                published: metadata.published || false,
                 notion_content: recordMap,
                 last_synced_at: new Date().toISOString()
             }
@@ -156,6 +157,16 @@ function extractMetadata(page) {
     // Extract tags (if exists as a multi-select property)
     if (page.properties?.Tags?.multi_select) {
         metadata.tags = page.properties.Tags.multi_select.map(tag => tag.name);
+    }
+
+    // Extract published status from Status property
+    metadata.published = false; // Default to draft
+    if (page.properties?.Status?.select?.name) {
+        const status = page.properties.Status.select.name.toLowerCase();
+        metadata.published = (status === 'published');
+    } else if (page.properties?.Status?.status?.name) {
+        const status = page.properties.Status.status.name.toLowerCase();
+        metadata.published = (status === 'published');
     }
 
     return metadata;
