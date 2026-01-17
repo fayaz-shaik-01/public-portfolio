@@ -3,13 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, Edit, Trash2, Eye, EyeOff, LogOut, Mail, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, LogOut, Mail, FileText, RefreshCw } from 'lucide-react';
+import NotionSyncForm from '../../components/NotionSyncForm';
 
 const AdminDashboard = () => {
     const [articles, setArticles] = useState([]);
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('articles'); // 'articles' or 'contacts'
+    const [showNotionSync, setShowNotionSync] = useState(false);
     const { signOut, user } = useAuth();
     const navigate = useNavigate();
 
@@ -183,9 +185,12 @@ const AdminDashboard = () => {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <h2 style={{ fontSize: '1.5rem' }}>Manage Articles</h2>
-                            <Link to="/admin/articles/new" style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-primary)', borderRadius: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Plus size={18} /> New Article
-                            </Link>
+                            <button
+                                onClick={() => setShowNotionSync(true)}
+                                style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-primary)', borderRadius: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', border: 'none', color: '#fff', cursor: 'pointer' }}
+                            >
+                                <Plus size={18} /> Add from Notion
+                            </button>
                         </div>
 
                         {articles.length === 0 ? (
@@ -217,6 +222,9 @@ const AdminDashboard = () => {
                                             </div>
                                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                                                 Created {formatDate(article.created_at)}
+                                                {article.last_synced_at && (
+                                                    <> • Synced {formatDate(article.last_synced_at)}</>
+                                                )}
                                             </p>
                                         </div>
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -228,14 +236,6 @@ const AdminDashboard = () => {
                                             >
                                                 {article.published ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
-                                            <Link
-                                                to={`/admin/articles/${article.id}`}
-                                                className="glass"
-                                                style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', borderRadius: '6px' }}
-                                                title="Edit"
-                                            >
-                                                <Edit size={18} />
-                                            </Link>
                                             <button
                                                 onClick={() => deleteArticle(article.id)}
                                                 className="glass"
@@ -310,6 +310,31 @@ const AdminDashboard = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Notion Sync Modal */}
+                {showNotionSync && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '2rem',
+                    }}>
+                        <NotionSyncForm
+                            onSuccess={(article) => {
+                                setShowNotionSync(false);
+                                fetchData(); // Refresh articles list
+                            }}
+                            onCancel={() => setShowNotionSync(false)}
+                        />
                     </div>
                 )}
             </div>

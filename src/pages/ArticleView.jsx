@@ -3,14 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { Calendar, ArrowLeft, AlertCircle } from 'lucide-react';
-import Editor from '@monaco-editor/react';
-import { BlockMath, InlineMath } from 'react-katex';
+import { NotionRenderer } from 'react-notion-x';
+
+// Import Notion styles
+import 'react-notion-x/src/styles.css';
+import 'prismjs/themes/prism-tomorrow.css';
 import 'katex/dist/katex.min.css';
 
 const ArticleView = () => {
     const { slug } = useParams();
     const [article, setArticle] = useState(null);
-    const [blocks, setBlocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -20,7 +22,7 @@ const ArticleView = () => {
 
     const fetchArticle = async () => {
         try {
-            // Fetch article
+            // Fetch article with Notion content
             const { data: articleData, error: articleError } = await supabase
                 .from('articles')
                 .select('*')
@@ -36,16 +38,6 @@ const ArticleView = () => {
             }
 
             setArticle(articleData);
-
-            // Fetch blocks
-            const { data: blocksData, error: blocksError } = await supabase
-                .from('blocks')
-                .select('*')
-                .eq('article_id', articleData.id)
-                .order('position');
-
-            if (blocksError) throw blocksError;
-            setBlocks(blocksData || []);
         } catch (error) {
             console.error('Error fetching article:', error);
             setError('Failed to load article');
@@ -60,120 +52,6 @@ const ArticleView = () => {
             month: 'long',
             day: 'numeric'
         });
-    };
-
-    const renderBlock = (block) => {
-        switch (block.type) {
-            case 'paragraph':
-                return (
-                    <p style={{ marginBottom: '1rem', lineHeight: 1.8 }}>
-                        {block.content.text}
-                    </p>
-                );
-
-            case 'heading1':
-                return (
-                    <h1 id={block.content.anchor} style={{ fontSize: '2.5rem', fontWeight: 700, marginTop: '2rem', marginBottom: '1rem' }}>
-                        {block.content.text}
-                    </h1>
-                );
-
-            case 'heading2':
-                return (
-                    <h2 id={block.content.anchor} style={{ fontSize: '2rem', fontWeight: 700, marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-                        {block.content.text}
-                    </h2>
-                );
-
-            case 'heading3':
-                return (
-                    <h3 id={block.content.anchor} style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-                        {block.content.text}
-                    </h3>
-                );
-
-            case 'heading4':
-                return (
-                    <h4 id={block.content.anchor} style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '1rem', marginBottom: '0.5rem' }}>
-                        {block.content.text}
-                    </h4>
-                );
-
-            case 'code':
-                return (
-                    <div style={{ margin: '1.5rem 0', borderRadius: '8px', overflow: 'hidden', background: '#1e1e1e' }}>
-                        <div style={{ padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '0.875rem', color: '#888' }}>
-                            {block.content.language}
-                        </div>
-                        <Editor
-                            height="auto"
-                            language={block.content.language}
-                            value={block.content.code}
-                            theme="vs-dark"
-                            options={{
-                                readOnly: true,
-                                minimap: { enabled: false },
-                                lineNumbers: block.content.showLineNumbers ? 'on' : 'off',
-                                scrollBeyondLastLine: false,
-                                fontSize: 14,
-                                wordWrap: 'on',
-                            }}
-                        />
-                    </div>
-                );
-
-            case 'math':
-                return (
-                    <div style={{ margin: '1.5rem 0', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', textAlign: 'center' }}>
-                        {block.content.display === 'inline' ? (
-                            <InlineMath math={block.content.latex} />
-                        ) : (
-                            <BlockMath math={block.content.latex} />
-                        )}
-                    </div>
-                );
-
-            case 'callout':
-                const calloutColors = {
-                    blue: { bg: 'rgba(59, 130, 246, 0.1)', border: '#3b82f6' },
-                    yellow: { bg: 'rgba(251, 191, 36, 0.1)', border: '#fbbf24' },
-                    red: { bg: 'rgba(239, 68, 68, 0.1)', border: '#ef4444' },
-                    green: { bg: 'rgba(34, 197, 94, 0.1)', border: '#22c55e' },
-                };
-                const colors = calloutColors[block.content.color] || calloutColors.blue;
-                return (
-                    <div style={{
-                        margin: '1.5rem 0',
-                        padding: '1rem',
-                        background: colors.bg,
-                        borderLeft: `4px solid ${colors.border}`,
-                        borderRadius: '8px',
-                        display: 'flex',
-                        gap: '0.75rem'
-                    }}>
-                        <span style={{ fontSize: '1.5rem' }}>{block.content.icon}</span>
-                        <p style={{ flex: 1, margin: 0 }}>{block.content.text}</p>
-                    </div>
-                );
-
-            case 'divider':
-                return <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid var(--glass-border)' }} />;
-
-            case 'quote':
-                return (
-                    <blockquote style={{ margin: '1.5rem 0', padding: '1rem 1.5rem', borderLeft: '4px solid var(--accent-primary)', fontStyle: 'italic', background: 'rgba(255,255,255,0.02)' }}>
-                        <p style={{ margin: 0 }}>{block.content.text}</p>
-                        {block.content.author && (
-                            <footer style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                — {block.content.author}
-                            </footer>
-                        )}
-                    </blockquote>
-                );
-
-            default:
-                return null;
-        }
     };
 
     if (loading) {
@@ -214,7 +92,7 @@ const ArticleView = () => {
 
     return (
         <article style={{ minHeight: '100vh', padding: '120px 0 80px' }}>
-            <div className="container" style={{ maxWidth: '800px' }}>
+            <div className="container" style={{ maxWidth: '900px' }}>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -223,6 +101,7 @@ const ArticleView = () => {
                         <ArrowLeft size={16} /> Back to Articles
                     </Link>
 
+                    {/* Article Header */}
                     <div style={{ marginBottom: '3rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
                             <Calendar size={14} />
@@ -238,27 +117,88 @@ const ArticleView = () => {
                         )}
                     </div>
 
-                    <div className="glass" style={{ padding: '3rem', marginBottom: '3rem' }}>
-                        {blocks.length > 0 ? (
-                            blocks.map((block) => (
-                                <div key={block.id}>
-                                    {renderBlock(block)}
-                                </div>
-                            ))
-                        ) : (
-                            <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>
+                    {/* Notion Content */}
+                    {article.notion_content ? (
+                        <div className="notion-container">
+                            <NotionRenderer
+                                recordMap={article.notion_content}
+                                fullPage={false}
+                                darkMode={true}
+                                disableHeader={true}
+                            />
+                        </div>
+                    ) : (
+                        <div className="glass" style={{ padding: '3rem', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--text-secondary)' }}>
                                 No content available yet.
                             </p>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    <div style={{ textAlign: 'center', paddingTop: '3rem', borderTop: '1px solid var(--glass-border)' }}>
+                    <div style={{ textAlign: 'center', paddingTop: '3rem', marginTop: '3rem', borderTop: '1px solid var(--glass-border)' }}>
                         <Link to="/articles" style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', textDecoration: 'underline' }}>
                             ← Back to All Articles
                         </Link>
                     </div>
                 </motion.div>
             </div>
+
+            {/* Custom styles for Notion content */}
+            <style>{`
+                /* Override Notion styles to match portfolio theme */
+                .notion-container {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid var(--glass-border);
+                    border-radius: 12px;
+                    padding: 3rem;
+                    backdrop-filter: blur(10px);
+                }
+
+                .notion-page {
+                    padding: 0 !important;
+                    background: transparent !important;
+                }
+
+                .notion-text {
+                    color: var(--text-primary) !important;
+                    line-height: 1.8 !important;
+                }
+
+                .notion-h1, .notion-h2, .notion-h3 {
+                    color: var(--text-primary) !important;
+                }
+
+                .notion-code {
+                    background: rgba(0, 0, 0, 0.3) !important;
+                    border: 1px solid var(--glass-border) !important;
+                    border-radius: 8px !important;
+                }
+
+                .notion-callout {
+                    background: rgba(255, 255, 255, 0.05) !important;
+                    border: 1px solid var(--glass-border) !important;
+                    border-radius: 8px !important;
+                }
+
+                .notion-quote {
+                    border-left: 4px solid var(--accent-primary) !important;
+                    background: rgba(255, 255, 255, 0.02) !important;
+                }
+
+                .notion-link {
+                    color: var(--accent-primary) !important;
+                }
+
+                .notion-asset-wrapper {
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
         </article>
     );
 };
