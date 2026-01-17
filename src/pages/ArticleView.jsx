@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { Calendar, ArrowLeft, AlertCircle } from 'lucide-react';
-import NotionBlockRenderer from '../components/NotionBlockRenderer';
 
 const ArticleView = () => {
     const { slug } = useParams();
@@ -113,9 +112,18 @@ const ArticleView = () => {
                     </div>
 
                     {/* Notion Content */}
-                    {article.notion_content?.blocks ? (
-                        <div className="notion-content-container glass" style={{ padding: '3rem', marginBottom: '3rem', borderRadius: '12px' }}>
-                            <NotionBlockRenderer blocks={article.notion_content.blocks} />
+                    {article.notion_page_id ? (
+                        <div className="notion-embed-container" style={{ marginBottom: '3rem' }}>
+                            <iframe
+                                src={`https://tide-hide-53c.notion.site/${article.notion_page_id.replace(/-/g, '')}`}
+                                style={{
+                                    width: '100%',
+                                    height: '100vh',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                }}
+                                title="Notion Content"
+                            />
                         </div>
                     ) : (
                         <div className="glass" style={{ padding: '3rem', textAlign: 'center' }}>
