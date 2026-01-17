@@ -25,13 +25,22 @@ const NotionRenderer = ({ blocks }) => {
                 if (item.type === 'table_group') {
                     return <TableGroup key={index} rows={item.rows} />;
                 }
+                if (item.type === 'bulleted_list_group') {
+                    return <BulletedListGroup key={index} items={item.items} />;
+                }
+                if (item.type === 'numbered_list_group') {
+                    return <NumberedListGroup key={index} items={item.items} />;
+                }
+                if (item.type === 'todo_list_group') {
+                    return <TodoListGroup key={index} items={item.items} />;
+                }
                 return <Block key={item.block.id || index} block={item.block} />;
             })}
         </div>
     );
 };
 
-// Helper function to group table rows together
+// Helper function to group related blocks together
 function groupBlocks(blocks) {
     const grouped = [];
     let i = 0;
@@ -54,7 +63,56 @@ function groupBlocks(blocks) {
                 type: 'table_group',
                 rows: tableRows
             });
-        } else {
+        }
+        // Group bulleted list items
+        else if (block.type === 'bulleted_list_item') {
+            const listItems = [block];
+            i++;
+
+            // Collect all consecutive bulleted_list_item blocks
+            while (i < blocks.length && blocks[i].type === 'bulleted_list_item') {
+                listItems.push(blocks[i]);
+                i++;
+            }
+
+            grouped.push({
+                type: 'bulleted_list_group',
+                items: listItems
+            });
+        }
+        // Group numbered list items
+        else if (block.type === 'numbered_list_item') {
+            const listItems = [block];
+            i++;
+
+            // Collect all consecutive numbered_list_item blocks
+            while (i < blocks.length && blocks[i].type === 'numbered_list_item') {
+                listItems.push(blocks[i]);
+                i++;
+            }
+
+            grouped.push({
+                type: 'numbered_list_group',
+                items: listItems
+            });
+        }
+        // Group to-do items
+        else if (block.type === 'to_do') {
+            const listItems = [block];
+            i++;
+
+            // Collect all consecutive to_do blocks
+            while (i < blocks.length && blocks[i].type === 'to_do') {
+                listItems.push(blocks[i]);
+                i++;
+            }
+
+            grouped.push({
+                type: 'todo_list_group',
+                items: listItems
+            });
+        }
+        else {
             grouped.push({ block });
             i++;
         }
@@ -66,8 +124,9 @@ function groupBlocks(blocks) {
 const Block = ({ block }) => {
     const { type } = block;
 
-    // Skip table and table_row blocks - they're handled by TableGroup
-    if (type === 'table' || type === 'table_row') {
+    // Skip blocks that are handled by group components
+    if (type === 'table' || type === 'table_row' ||
+        type === 'bulleted_list_item' || type === 'numbered_list_item' || type === 'to_do') {
         return null;
     }
 
@@ -80,12 +139,6 @@ const Block = ({ block }) => {
             return <Heading2Block block={block} />;
         case 'heading_3':
             return <Heading3Block block={block} />;
-        case 'bulleted_list_item':
-            return <BulletedListBlock block={block} />;
-        case 'numbered_list_item':
-            return <NumberedListBlock block={block} />;
-        case 'to_do':
-            return <TodoBlock block={block} />;
         case 'toggle':
             return <ToggleBlock block={block} />;
         case 'code':
@@ -175,70 +228,84 @@ const Heading3Block = ({ block }) => (
     </h3>
 );
 
-const BulletedListBlock = ({ block }) => (
+const BulletedListGroup = ({ items }) => (
     <ul style={{
         paddingLeft: '1.5em',
-        marginBottom: '0.25em',
+        margin: '0.5em 0',
         listStyleType: 'disc'
     }}>
-        <li style={{
-            paddingLeft: '0.375em',
-            lineHeight: '1.6',
-            color: 'rgba(255, 255, 255, 0.9)'
-        }}>
-            <RichText richText={block.bulleted_list_item?.rich_text || []} />
-        </li>
+        {items.map((item, index) => (
+            <li key={item.id || index} style={{
+                paddingLeft: '0.375em',
+                lineHeight: '1.6',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '0.25em'
+            }}>
+                <RichText richText={item.bulleted_list_item?.rich_text || []} />
+            </li>
+        ))}
     </ul>
 );
 
-const NumberedListBlock = ({ block }) => (
+const NumberedListGroup = ({ items }) => (
     <ol style={{
         paddingLeft: '1.5em',
-        marginBottom: '0.25em',
+        margin: '0.5em 0',
         listStyleType: 'decimal'
     }}>
-        <li style={{
-            paddingLeft: '0.375em',
-            lineHeight: '1.6',
-            color: 'rgba(255, 255, 255, 0.9)'
-        }}>
-            <RichText richText={block.numbered_list_item?.rich_text || []} />
-        </li>
+        {items.map((item, index) => (
+            <li key={item.id || index} style={{
+                paddingLeft: '0.375em',
+                lineHeight: '1.6',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '0.25em'
+            }}>
+                <RichText richText={item.numbered_list_item?.rich_text || []} />
+            </li>
+        ))}
     </ol>
 );
 
-const TodoBlock = ({ block }) => {
-    const checked = block.to_do?.checked || false;
+const TodoListGroup = ({ items }) => (
+    <div style={{ margin: '0.5em 0' }}>
+        {items.map((item, index) => {
+            const checked = item.to_do?.checked || false;
+            return (
+                <div key={item.id || index} style={{
+                    display: 'flex',
+                    gap: '0.5em',
+                    marginBottom: '0.25em',
+                    alignItems: 'flex-start'
+                }}>
+                    <input
+                        type="checkbox"
+                        checked={checked}
+                        readOnly
+                        style={{
+                            marginTop: '0.3em',
+                            cursor: 'not-allowed',
+                            accentColor: '#2eaadc'
+                        }}
+                    />
+                    <div style={{
+                        flex: 1,
+                        lineHeight: '1.6',
+                        textDecoration: checked ? 'line-through' : 'none',
+                        opacity: checked ? 0.5 : 1,
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }}>
+                        <RichText richText={item.to_do?.rich_text || []} />
+                    </div>
+                </div>
+            );
+        })}
+    </div>
+);
 
-    return (
-        <div style={{
-            display: 'flex',
-            gap: '0.5em',
-            marginBottom: '0.25em',
-            alignItems: 'flex-start'
-        }}>
-            <input
-                type="checkbox"
-                checked={checked}
-                readOnly
-                style={{
-                    marginTop: '0.3em',
-                    cursor: 'not-allowed',
-                    accentColor: '#2eaadc'
-                }}
-            />
-            <div style={{
-                flex: 1,
-                lineHeight: '1.6',
-                textDecoration: checked ? 'line-through' : 'none',
-                opacity: checked ? 0.5 : 1,
-                color: 'rgba(255, 255, 255, 0.9)'
-            }}>
-                <RichText richText={block.to_do?.rich_text || []} />
-            </div>
-        </div>
-    );
-};
+// Keep old components for backwards compatibility but they won't be used
+const BulletedListBlock = ({ block }) => null;
+const NumberedListBlock = ({ block }) => null;
+const TodoBlock = ({ block }) => null;
 
 const ToggleBlock = ({ block }) => {
     const [isOpen, setIsOpen] = useState(false);
