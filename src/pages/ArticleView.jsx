@@ -125,6 +125,8 @@ const ArticleView = () => {
                                 fullPage={false}
                                 darkMode={true}
                                 disableHeader={true}
+                                showTableOfContents={false}
+                                minTableOfContentsItems={3}
                             />
                         </div>
                     ) : (
@@ -143,7 +145,8 @@ const ArticleView = () => {
                                     {JSON.stringify({
                                         hasNotionContent: !!article.notion_content,
                                         notionPageId: article.notion_page_id,
-                                        lastSynced: article.last_synced_at
+                                        lastSynced: article.last_synced_at,
+                                        contentKeys: article.notion_content ? Object.keys(article.notion_content) : []
                                     }, null, 2)}
                                 </pre>
                             </details>
