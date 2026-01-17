@@ -1,0 +1,82 @@
+/* Notion Content Styling */
+.notion-content-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.notion-content {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Links */
+.notion-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.3);
+    transition: all 0.2s;
+}
+
+.notion-link:hover {
+    text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Code blocks */
+.notion-content pre {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+/* Lists */
+.notion-content ul,
+.notion-content ol {
+    margin: 0.5em 0;
+}
+
+/* Tables */
+.notion-content table {
+    width: 100%;
+    margin: 1em 0;
+}
+
+.notion-content table td,
+.notion-content table th {
+    min-width: 100px;
+}
+
+/* Mermaid diagrams */
+.mermaid-diagram {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mermaid-diagram .mermaid {
+    max-width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .notion-content-wrapper {
+        padding: 1rem;
+    }
+    
+    .notion-content {
+        font-size: 15px;
+    }
+}
+
+/* Smooth scrolling for anchor links */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Selection */
+.notion-content ::selection {
+    background-color: rgba(45, 170, 219, 0.3);
+}
